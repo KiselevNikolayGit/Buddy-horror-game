@@ -1,9 +1,14 @@
 -- function funstart()&&	function love.wheelmoved(x, y)&&	end&&	function love.keypressed(key, scancode, isrepeat)&&	end&&	function love.keyreleased(key)&&	end&&	function love.mousepressed(x, y, button, isTouch)&&		x = x - side&&	end&&	function love.mousereleased(x, y, button, isTouch)&&		x = x - side&&	end&&	function love.textinput(text)&&	end&&	function love.draw()&&		preeffects()&&   aftereffects()&&	end&&end
 
 function radio(y)
+	filltboolean = not filltboolean
+	if math.abs(filltop) >= 200 then
+		filltop = 199
+		wheelpos = nil
+	end
 	if wheelpos ~= nil then
 		if wheelpos < (255 - 55) * 25.5 and wheelpos > (-255 + 55) * 25.5 then
-			wheelpos = wheelpos + y
+			wheelpos = wheelpos + (y / 12.23) + ((50 - love.math.random(0, 100)) / 150)
 		end
 	else
 		wheelpos = math.floor(filltop / 25.5)
@@ -12,6 +17,7 @@ function radio(y)
 end
 
 function fillt()
+	filltop = filltop - ((23 - (love.math.random(0, 60))) / 23)	
 	function pixnoi(x, y, r, g, b, a)
 		local power = love.math.random(-24, 24)
 		local r = (255 / 2) - power
@@ -44,6 +50,28 @@ function butcoll(x, y, text, fun)
 	end
 end
 
+function but(x, y, text)
+	if x > text.x and y > text.y and x < text.x + text.w and y < text.y + text.h then
+		return true
+	else
+		return false
+	end
+end
+
+function butses()
+	x, y = love.mouse.getPosition()
+	x = x - side
+	if but(x, y, title) then
+		acurs = true
+	elseif but(x, y, start) then
+		acurs = true
+	elseif but(x, y, exit) then
+		acurs = true
+	else
+		acurs = false
+	end
+end
+
 function preeffects()
 	love.graphics.translate(side, 0)
 end
@@ -53,8 +81,14 @@ function aftereffects()
 	love.graphics.draw(mesh, -side, 0)
 	love.graphics.draw(mesh, size, 0)
 	love.graphics.print(tostring(love.timer.getFPS()), -side + 5 * em, 5 * em, -0.06, 0.2, 0.2)	
-	love.graphics.setColor(255, 255, 255, filltop + 55)		
+	love.graphics.setColor(255, 255, 255, filltop + 25)		
 	love.graphics.draw(fillter, -side, 0, 0, 5, 5)
+	love.graphics.setColor(255, 255, 255, 255)
+	if acurs then
+		love.graphics.draw(imcursa, love.mouse.getX() - side, love.mouse.getY(), 0, 5, 5, imcursa:getWidth() / 2, imcursa:getHeight() / 2)
+	else
+		love.graphics.draw(imcurs, love.mouse.getX() - side, love.mouse.getY(), 0, 5, 5, imcurs:getWidth() / 2, imcurs:getHeight() / 2)
+	end
 end
 
 function toup(dt)
@@ -67,8 +101,17 @@ function love.load()
 		size = hid
 		side = (wid - size) / 2
 		em = size / 600
+		acurs = false
+		love.mouse.setVisible(false)
+		imcursa = love.graphics.newImage("iso/cam-a.bmp")
+		imcursa:setFilter("nearest")		
+		imcurs = love.graphics.newImage("iso/cam.bmp")
+		imcurs:setFilter("nearest")		
 	end
 	do -- Draw
+		background = love.graphics.newImage("iso/menu.bmp")
+		background:setWrap("repeat")
+		background:setFilter("nearest")
 		font = love.graphics.newFont("Press_Start_2P/PressStart2P-Regular.ttf", 50)
 		font:setFilter("nearest")
 		do -- Title
@@ -87,7 +130,7 @@ function love.load()
 			start.rw = 0.5
 			start.rh = 0.5
 			start.x = 300 * em
-			start.y = (30 * em) + title.h
+			start.y = (200 * em) + title.h
 			start.w = start.t:getWidth() * start.rw
 			start.h = start.t:getHeight() * start.rh
 		end
@@ -134,7 +177,8 @@ function love.load()
 	end
 	do -- Fillter
 		filltspeed = 0.4
-		filltop = 225
+		wheelpos = nil
+		filltop = 180
 		fillt()
 	end
 	do -- World
@@ -165,6 +209,7 @@ function love.load()
 end
 
 function love.update(dt)
+	time = love.timer.getTime()	
 	do -- World
 		World:update(dt)
 	end
@@ -176,7 +221,14 @@ function love.update(dt)
 			isfillter = isfillter + dt
 		end
 	end
+	butses()
 	toup(dt)
+end
+
+function love.keypressed(key, scancode, isrepeat)
+	if key == "escape" then
+		love.event.quit()
+	end
 end
 
 function love.mousepressed(x, y, button, isTouch)
@@ -200,6 +252,7 @@ function love.draw()
 		love.graphics.draw(title.t, title.x, title.y, 0, title.rw, title.rh)
 		love.graphics.draw(start.t, start.x, start.y, 0, start.rw, start.rh)
 		love.graphics.draw(exit.t, exit.x, exit.y, 0, exit.rw, exit.rh)
+		-- love.graphics.draw(background, 0, 0, 0, size / background:getHeight())		
 	end
 	aftereffects()	
 end
@@ -213,6 +266,11 @@ function funtitle()
 end
 
 function funstart()
+	wheelpos = nil
+	filltop = 100
+	do -- Load message
+		loadmess = love.graphics.newText(font, "Загрузка...")		
+	end
 	do -- Terrain
 		terraimg = love.graphics.newImage("iso/cl-g.bmp")
 		terraimg:setWrap("repeat")
@@ -244,18 +302,6 @@ function funstart()
 	function love.textinput(text)
 	end
 	function toup(dt)
-		if times ~= nil then
-			times = times + dt
-		else
-			times = dt
-		end 
-		bcvert = {0.1, 0.2, 0.4, 0.75, 1, 0.8}
-		if bcvert[math.floor(times)] ~= nil then
-			pfd[1] = bcvert[math.floor(times)]
-		end
-		if bcvert[math.floor(times - 5)] ~= nil then
-			pfd[2] = bcvert[math.floor(times - 5)]
-		end
 	end
 
 	function love.draw()
@@ -264,11 +310,11 @@ function funstart()
 			love.graphics.setColor(255, 255, 255, 255)
 			love.graphics.draw(background, 0, 0, 0, size / background:getHeight())
 			love.graphics.draw(terra, 0, 500 * em)
-			love.graphics.setColor(255 / 2, 255 / 2, 255 / 2, 255 * pfd[1])
+			love.graphics.setColor(255 / 2, 255 / 2, 255 / 2, 255 / 3 * 2)
 			love.graphics.draw(kate.img, 300 * em, 375 * em, 0, (60 * em) / kate.w, (60 * em) / kate.w, ((60 * em) / kate.w) / 2, ((60 * em) / kate.w) / 2)
-			love.graphics.setColor(255 / 2, 255 / 2, 255 / 2, 255 * pfd[2])
-			love.graphics.print("Привет,\nМакс.", 100 * em, 350 * em, 0, 0.5)
 		end
 		aftereffects()
+		love.graphics.setColor(255, 255, 255, 255 / 3)
+		love.graphics.draw(loadmess, 300 * em, 200 * em, 0, 1, 1, loadmess:getWidth() / 2, loadmess:getHeight() / 2)
 	end
 end
